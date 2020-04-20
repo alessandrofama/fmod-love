@@ -66,7 +66,7 @@ Returns `false` if failed, `true` if succeded.
 
 #### Loading a bank
 ```
-fmod.loadBank(bankPath, flags);
+fmod.loadBank(bankPath, flags)
 ```
 `bankPath` is the path to the bank file. `flags` (int) can be:
 
@@ -80,7 +80,7 @@ Returns `-1` if failed.
 Use the returned value to unload the bank if necessary:
 
 ```
-fmod.unloadBank(index);
+fmod.unloadBank(index)
 ```
 Returns `false` if failed, `true` if succeded.
 
@@ -88,20 +88,20 @@ Returns `false` if failed, `true` if succeded.
 
 #### Create an instance
 ```
-fmod.createInstance(eventPath);
+fmod.createInstance(eventPath)
 ```
 Returns an index value to the EventInstance. 
 Returns `-1` if failed. Use the index value to start the instance:
 
 #### Starting an instance
 ```
-fmod.startIntance(index);
+fmod.startIntance(index)
 ```
 Returns `false` if failed, `true` if succeded.
 
 #### Stopping an instance
 ```
-fmod.stopInstance(index, stopMode);
+fmod.stopInstance(index, stopMode)
 ```
 `stopMode`  can be:
 
@@ -112,13 +112,13 @@ Returns `false` if failed, `true` if succeded.
 
 #### Releasing an instance
 ```
-fmod.releaseInstance(index);
+fmod.releaseInstance(index)
 ```
 Returns `false` if failed, `true` if succeded. This will remove the instance from the index.
 
 #### Setting the 3D Attributes on an instance
 ```
-fmod.set3DAttributes(index, posX, posY, posZ, dirX, dirY, dirZ, oX, oY, oZ);
+fmod.set3DAttributes(index, posX, posY, posZ, dirX, dirY, dirZ, oX, oY, oZ)
 ```
 
 `dirX` `dirY` `dirZ` is the forward vector, `oX` `oY` `oZ` the up vector. 
@@ -126,59 +126,59 @@ Returns `false` if failed, `true` if succeded.
 
 #### Playing a simple 2D event (no spatializer)
 ```
-fmod.playOneShot2D(eventPath);
+fmod.playOneShot2D(eventPath)
 ```
 Will automatically call EventInstance::release after starting. No need to take care of the instance.
 Returns `false` if failed, `true` if succeded.
 
 #### Playing a simple 3D event 
 ```
-fmod.playOneShot3D(eventPath, posX, posY, posZ, dirX, dirY, dirZ, oX, oY, oZ);
+fmod.playOneShot3D(eventPath, posX, posY, posZ, dirX, dirY, dirZ, oX, oY, oZ)
 ```
 It will automatically call EventInstance::release after playing. `dirX` `dirY` `dirZ` is the forward vector, `oX` `oY` `oZ` the up vector.
 Returns `false` if failed, `true` if succeded.
 
 #### Setting the volume of an instance
 ```
-fmod.setInstanceVolume(index, volume);
+fmod.setInstanceVolume(index, volume)
 ```
 Returns `false` if failed, `true` if succeded.
 
 #### Check if an instance is playing
 ```
-fmod.isPlaying(index);
+fmod.isPlaying(index)
 ```
 Returns `false` if failed or not playing, `true` if playing.
 
 #### Set the paused state of an instance
 ```
-fmod.setInstancePaused(index, pauseState);
+fmod.setInstancePaused(index, pauseState)
 ```
-`pause` should be 0 or 1;
+`pauseState` should be `true` or `false`.
 
 #### Set the pitch of an instance
 ```
-fmod.setInstancePitch(index, pitch);
+fmod.setInstancePitch(index, pitch)
 ```
 Returns `false` if failed, `true` if succeded.
 
 #### Get the timeline position of an instance
 ```
-fmod.getTimelinePosition(index);
+fmod.getTimelinePosition(index)
 ```
 Returns the timeline position (int).
 Returns `-1` if failed.
 
 #### Set the timeline position of an instance
 ```
-fmod.setTimelinePosition(index, position);
+fmod.setTimelinePosition(index, position)
 ```
 
 Returns `false` if failed, `true` if succeded.
 
 #### Get the RMS value of a playing instance
 ```
-fmod.getInstanceRms(index);
+fmod.getInstanceRms(index)
 ```
 Returns the RMS value of an instance. 
 Returns `-1` if failed.
@@ -187,28 +187,28 @@ Returns `-1` if failed.
 
 #### Get a global parameter value by name 
 ```
-fmod.getGlobalParameterByName(parameterName);
+fmod.getGlobalParameterByName(parameterName)
 ```
 Takes the parameter name and returns the parameter value. 
 Returns `-1` if failed.
 
 #### Set a global parameter value by name 
 ```
-fmod.setGlobalParameterByName(parameterName, value, ignoreSeekSpeed);
+fmod.setGlobalParameterByName(parameterName, value, ignoreSeekSpeed)
 ```
 ignoreSeekSpeed can be true or false.
 Returns `false` if failed, `true` if succeded.
 
 #### Get a local parameter value by name 
 ```
-fmod.getParameterByName(instanceIndex, parameterName);
+fmod.getParameterByName(instanceIndex, parameterName)
 ```
 Takes the instance index and the parameter name and returns its value.
 Returns `-1` if failed.
 
 #### Set a local parameter value by name 
 ```
-fmod.setParameterByName(instanceIndex, parameterName, value, ignoreSeekSpeed);
+fmod.setParameterByName(instanceIndex, parameterName, value, ignoreSeekSpeed)
 ```
 Returns `false` if failed, `true` if succeded.
 
@@ -216,21 +216,21 @@ Returns `false` if failed, `true` if succeded.
 
 #### Getting a bus
 ```
-fmod.getBus(busPath);
+fmod.getBus(busPath)
 ```
 Takes the bus path and returns an index to that bus. Use it to get or set the bus volume.
 Returns `-1` if failed.
 
 #### Get the bus volume
 ```
-fmod.getBusVolume(index);
+fmod.getBusVolume(index)
 ```
 Returns the bus volume.
 Returns `-1` if failed.
 
 #### Set the bus volume
 ```
-fmod.setBusVolume(index, volume);
+fmod.setBusVolume(index, volume)
 ```
 Returns `false` if failed, `true` if succeded.
 
@@ -238,21 +238,21 @@ Returns `false` if failed, `true` if succeded.
 
 #### Getting a VCA
 ```
-fmod.getVCA(char* vcaPath);
+fmod.getVCA(vcaPath)
 ```
 Takes the VCA path and returns an index value to that VCA. Use it to get or set the VCA volume.
 Returns `-1` if failed.
 
 #### Get the VCA volume
 ```
-fmod.getVCAVolume(index);
+fmod.getVCAVolume(index)
 ```
 Returns the VCA volume.
 Returns `-1` if failed.
 
 #### Set the VCA volume
 ```
-fmod.setVCAVolume(index, volume);
+fmod.setVCAVolume(index, volume)
 ```
 Returns `false` if failed, `true` if succeded.
 
@@ -279,5 +279,5 @@ fmod.releaseInstance(instance)
 
 ### Playing a 2d sound with playOneShot2D
 ```
-fmod.playOneShot2D("event:/Player/OneShott");
+fmod.playOneShot2D("event:/Player/OneShot")
 ```
