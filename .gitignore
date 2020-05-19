@@ -356,8 +356,8 @@ MigrationBackup/
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
 
-# FMOD libes
-fmod.dll
-fmod_vc.lib
-fmodstudio.dll
-fmodstudio_vc.lib
+#FMOD Libs
+lib/
+*.idb
+
+*.dblite

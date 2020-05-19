@@ -1,0 +1,105 @@
+#!python
+import os
+import subprocess
+
+opts = Variables([], ARGUMENTS)
+
+# Gets the standard flags CC, CCX, etc.
+env = DefaultEnvironment()
+
+opts.Add(EnumVariable('target', "Compilation target",
+                      'debug', ['d', 'debug', 'r', 'release']))
+opts.Add(EnumVariable('platform', "Compilation platform",
+                      '', ['', 'windows', 'osx']))
+opts.Add(EnumVariable('p', "Compilation target, alias for 'platform'",
+                      '', ['', 'windows', 'osx']))
+opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", 'no'))
+opts.Add(PathVariable('fmod_api', 'The FMOD API path', '', PathVariable.PathAccept))
+opts.Add(PathVariable('target_path', 'The path where the lib is installed.', 'bin/'))
+opts.Add(PathVariable('target_name', 'The library name.', 'fmod_love', PathVariable.PathAccept))
+
+opts.Update(env)
+
+if env['use_llvm']:
+    env['CC'] = 'clang'
+    env['CXX'] = 'clang++'
+
+if env['p'] != '':
+    env['platform'] = env['p']
+
+if env['platform'] == '':
+    print("No valid target platform selected.")
+    quit()
+
+fmod_api_core_headers_path = env['fmod_api'] + "/api/core/inc/"
+fmod_api_studio_headers_path = env['fmod_api'] + "/api/studio/inc/"
+lua_headers_path = "lua/inc/"
+lua_library_path = "lua/lib/"
+lua_lib = "lua51"
+
+if env['platform'] == "osx":
+
+    fmod_api_core_libs_path = env['fmod_api'] + "/api/core/lib/"
+    fmod_api_studio_libs_path = env['fmod_api'] + "/api/studio/lib/"
+
+    fmodL_library = "libfmodL"
+    fmod_library = "libfmod"
+    fmodstudio_library = "libfmodstudio"
+    fmodstudioL_library = "libfmodstudioL"
+
+    env['target_path'] += 'osx/'
+    if env['target'] in ('debug', 'd'):
+        env['target_path'] += 'debug/'
+    else:
+        env['target_path'] += 'release/'
+
+    if env['target'] in ('debug', 'd'):
+        env.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
+        env.Append(CXXFLAGS=['-std=c++17'])
+        env.Append(LINKFLAGS=['-Wl,-undefined,dynamic_lookup', '-Wignored-attributes'])
+    else:
+        env.Append(CCFLAGS=['-g', '-O3', '-arch', 'x86_64'])
+        env.Append(CXXFLAGS=['-std=c++17'])
+        env.Append(LINKFLAGS=['-Wl,-undefined,dynamic_lookup', '-Wignored-attributes'])
+
+elif env['platform'] == "windows":
+
+    fmod_api_core_libs_path = env['fmod_api'] + "/api/core/lib/x64/"
+    fmod_api_studio_libs_path = env['fmod_api'] + "/api/studio/lib/x64/"
+
+    fmodL_library = "fmodL_vc"
+    fmod_library = "fmod_vc"
+    fmodstudio_library = "fmodstudio_vc"
+    fmodstudioL_library = "fmodstudioL_vc"
+
+    env['target_path'] += 'win/'
+    if env['target'] in ('debug', 'd'):
+        env['target_path'] += 'debug/'
+    else:
+        env['target_path'] += 'release/'
+
+    env.Append(ENV=os.environ)
+    env.Append(CCFLAGS=['-W3', '-GR'])
+   
+    if env['target'] in ('debug', 'd'):
+        env.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
+    else:
+        env.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
+
+sources = []
+sources.append(Glob('src/*.cpp')) 
+
+env.Append(CPPPATH=[fmod_api_core_headers_path, fmod_api_studio_headers_path, lua_headers_path])
+env.Append(LIBPATH=[fmod_api_studio_libs_path, fmod_api_core_libs_path, lua_library_path])
+
+if env['target'] in ('debug', 'd'):
+    env.Append(LIBS=[fmodL_library, fmodstudioL_library, lua_lib])
+else:
+    env.Append(LIBS=[fmod_library, fmodstudio_library, lua_lib])
+
+library = env.SharedLibrary(target=env['target_path'] + env['target_name'] , source=sources)
+
+Default(library)
+
+# Generates help for the -h scons option.
+Help(opts.GenerateHelpText(env))

@@ -1,17 +1,4 @@
-extern "C" {
-#include "lua/inc/lua.h"
-#include "lua/inc/lauxlib.h"
-}
-
-#include "fmod/inc/fmod_studio.hpp"
-#include "fmod/inc/fmod.hpp"
-#include <unordered_map>
-
-struct Vector3 {
-	float x;
-	float y;
-	float z;
-};
+#include "fmod_love.h"
 
 FMOD::Studio::System* studioSystem = nullptr;
 FMOD::System* coreSystem = nullptr;
@@ -28,71 +15,77 @@ std::size_t nBusses = 0;
 std::unordered_map<std::size_t, FMOD::Studio::VCA*> vcaList;
 std::size_t nVCAs = 0;
 
-static int LuaIntDefault(lua_State* L, int i, int def);
 
-FMOD_3D_ATTRIBUTES To3DAttributes(const Vector3& vec, const Vector3& forward,
-	const Vector3& up);
+void To3DAttributes(Vector3 position, Vector3 forward, Vector3 up, FMOD_3D_ATTRIBUTES& outAttributes)
+{
+	FMOD_3D_ATTRIBUTES attributes;
 
-FMOD_VECTOR ToFMODVector(const Vector3& position);
+	attributes.forward;		ToFMODVector(forward, attributes.forward);
+	attributes.up;			ToFMODVector(up, attributes.up);
+	attributes.position;	ToFMODVector(position, attributes.position);
+
+	outAttributes = attributes;
+}
+
+void ToFMODVector(Vector3 inVector, FMOD_VECTOR& outVector)
+{
+	outVector.x = inVector.x;
+	outVector.y = inVector.y;
+	outVector.z = inVector.z;
+
+}
 
 static int LuaIntDefault(lua_State* L, int i, int def)
 {
 	return (lua_gettop(L) >= i && !lua_isnil(L, i)) ? luaL_checkint(L, i) : def;
 }
 
-FMOD_3D_ATTRIBUTES To3DAttributes(const Vector3& vec, const Vector3& forward,
-	const Vector3& up)
+static bool CheckError(const FMOD_RESULT result)
 {
-	FMOD_3D_ATTRIBUTES attributes;
-	attributes.forward = ToFMODVector(forward);
-	attributes.up = ToFMODVector(up);
-	attributes.position = ToFMODVector(vec);
+	if (result != FMOD_OK)
+	{
+		return false;
+	}
 
-	return attributes;
+	return true;
 }
 
-FMOD_VECTOR ToFMODVector(const Vector3& position)
-{
-	FMOD_VECTOR fVec;
-	fVec.x = position.x;
-	fVec.y = position.y;
-	fVec.z = position.z;
-	return fVec;
-}
+#define ERROR_CHECK(result) CheckError(result)
 
-bool FMODInit(int outputType, int realChannels, int virtualChannels,
-	int studioInitFlags)
+bool Init(const unsigned int& outputType, const unsigned int& realChannels, const unsigned int& virtualChannels,
+	const unsigned int studioInitFlags)
 {
 	auto result = FMOD::Studio::System::create(&studioSystem);
 
 	if (result != FMOD_OK) {
-		return 0;
+		return false;
 	}
 
 	result = studioSystem->getCoreSystem(&coreSystem);
 
 	if (result != FMOD_OK) {
-		return 0;
+		return false;
 	}
 
 	result = coreSystem->setOutput((FMOD_OUTPUTTYPE)outputType);
 
 	if (result != FMOD_OK) {
-		return 0;
+		return false;
 	}
 
 	result = coreSystem->setSoftwareChannels(realChannels);
 
 	if (result != FMOD_OK) {
-		return 0;
+		return false;
 	}
 
 	result = studioSystem->initialize(virtualChannels,
 		(FMOD_STUDIO_INITFLAGS)studioInitFlags,
 		FMOD_INIT_NORMAL, NULL);
 
-	if (result != FMOD_OK) {
-		return 0;
+	if (result != FMOD_OK) 
+	{
+		return false;
 	}
 
 	return 1;
@@ -101,12 +94,7 @@ bool FMODInit(int outputType, int realChannels, int virtualChannels,
 bool Update()
 {
 	auto result = studioSystem->update();
-
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
 int LoadBank(const char* bankPath, int flags)
@@ -115,11 +103,13 @@ int LoadBank(const char* bankPath, int flags)
 	auto result = studioSystem->loadBankFile(
 		bankPath, (FMOD_STUDIO_LOAD_BANK_FLAGS)flags, &bank);
 
-	if (result != FMOD_OK) {
+	if (!ERROR_CHECK(result)) 
+	{
 		return -1;
 	}
 
-	if (bank) {
+	if (bank) 
+	{
 		bankList.emplace(nBanks++, bank);
 		return static_cast<int>(nBanks - 1);
 	}
@@ -131,47 +121,36 @@ bool UnloadBank(int index)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (bankList.count(i) == 0) {
-		return 0;
+	if (bankList.count(i) == 0) 
+	{
+		return false;
 	}
 
 	auto result = bankList[i]->unload();
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
 bool SetNumListeners(int listeners)
 {
 	auto result = studioSystem->setNumListeners(listeners);
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
 bool SetListener3DPosition(int listener, float posX, float posY, float posZ,
 	float dirX, float dirY, float dirZ, float oX,
 	float oY, float oZ)
 {
-	Vector3 pos = { posX, posY, posZ };
-	Vector3 forward = { dirX, dirY, dirZ };
-	Vector3 up = { oX, oY, oZ };
+	Vector3 pos = Vector3(posX, posY, posZ);
+	Vector3 forward = Vector3(dirX, dirY, dirZ);
+	Vector3 up = Vector3(oX, oY, oZ);
 
-	FMOD_3D_ATTRIBUTES attributes = To3DAttributes(pos, forward, up);
+	FMOD_3D_ATTRIBUTES attributes; To3DAttributes(pos, forward, up, attributes);
 
 	auto result = studioSystem->setListenerAttributes(listener, &attributes);
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
 int CreateInstance(const char* eventPath)
@@ -183,18 +162,24 @@ int CreateInstance(const char* eventPath)
 		return -1;
 	}
 
-	if (eventDescription) {
+	if (eventDescription) 
+	{
 		FMOD::Studio::EventInstance* eventInstance = nullptr;
 		auto result = eventDescription->createInstance(&eventInstance);
-		if (result == FMOD_OK) {
+		if (result == FMOD_OK) 
+		{
 			instanceList.emplace(nInstances++, eventInstance);
 			return static_cast<int>(nInstances - 1);
 		}
 		else
+		{
 			return -1;
+		}		
 	}
-	else
+	else 
+	{
 		return -1;
+	}		
 }
 
 bool StartInstance(int index)
@@ -202,30 +187,25 @@ bool StartInstance(int index)
 	std::size_t i = (std::size_t)round(index);
 
 	if (instanceList.count(i) == 0) {
-		return 0;
+		return false;
 	}
 	auto result = instanceList[i]->start();
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
 bool StopInstance(int index, int stopMode)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 1) {
+	if (instanceList.count(i) == 1) 
+	{
 		auto result = instanceList[i]->stop((FMOD_STUDIO_STOP_MODE)(stopMode));
 
-		if (result != FMOD_OK) {
-			return 0;
-		}
+		return ERROR_CHECK(result);
 	}
 
-	return 1;
+	return false;
 }
 
 bool ReleaseInstance(int index)
@@ -235,14 +215,15 @@ bool ReleaseInstance(int index)
 	if (instanceList.count(i) == 1) {
 		auto result = instanceList[i]->release();
 
-		if (result != FMOD_OK) {
-			return 0;
+		if (result != FMOD_OK) 
+		{
+			return false;
 		}
 
 		instanceList.erase(i);
 	}
 
-	return 1;
+	return true;
 }
 
 bool Set3DAttributes(int index, float posX, float posY, float posZ, float dirX,
@@ -250,23 +231,20 @@ bool Set3DAttributes(int index, float posX, float posY, float posZ, float dirX,
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return 0;
+	if (instanceList.count(i) == 0) 
+	{
+		return false;
 	}
 
 	Vector3 pos = { posX, posY, posZ };
 	Vector3 forward = { dirX, dirY, dirZ };
 	Vector3 up = { oX, oY, oZ };
 
-	FMOD_3D_ATTRIBUTES attributes;
-	attributes = To3DAttributes(pos, forward, up);
+	FMOD_3D_ATTRIBUTES attributes; To3DAttributes(pos, forward, up, attributes);
 
 	auto result = instanceList[i]->set3DAttributes(&attributes);
-	if (result != FMOD_OK) {
-		return 0;
-	}
 
-	return 1;
+	return ERROR_CHECK(result);
 }
 
 bool PlayOneShot2D(const char* eventPath)
@@ -274,24 +252,27 @@ bool PlayOneShot2D(const char* eventPath)
 	FMOD::Studio::EventDescription* eventDescription = NULL;
 	auto result = studioSystem->getEvent(eventPath, &eventDescription);
 
-	if (result != FMOD_OK) {
-		return 0;
+	if (result != FMOD_OK) 
+	{
+		return false;
 	}
 
-	if (eventDescription) {
+	if (eventDescription) 
+	{
 		FMOD::Studio::EventInstance* eventInstance = NULL;
 		auto result = eventDescription->createInstance(&eventInstance);
 
-		if (result == FMOD_OK && eventInstance) {
+		if (eventInstance) 
+		{
 			eventInstance->start();
 			eventInstance->release();
-			return 1;
+			return true;
 		}
 		else
-			return 0;
+			return false;
 	}
 	else
-		return 0;
+		return false;
 }
 
 bool PlayOneShot3D(const char* eventPath, float posX, float posY, float posZ,
@@ -302,119 +283,119 @@ bool PlayOneShot3D(const char* eventPath, float posX, float posY, float posZ,
 	auto result = studioSystem->getEvent(eventPath, &eventDescription);
 
 	if (result != FMOD_OK) {
-		return 0;
+		return false;
 	}
 
-	if (eventDescription) {
+	if (eventDescription) 
+	{
 		bool is3D;
 		eventDescription->is3D(&is3D);
 
 		if (!is3D) {
-			return 0;
+			return false;
 		}
 
 		FMOD::Studio::EventInstance* eventInstance = NULL;
 		result = eventDescription->createInstance(&eventInstance);
 
-		if (result != FMOD_OK) {
-			return 0;
+		if (result != FMOD_OK) 
+		{
+			return false;
 		}
 
 		Vector3 pos = { posX, posY, posZ };
 		Vector3 forward = { dirX, dirY, dirZ };
 		Vector3 up = { oX, oY, oZ };
-		FMOD_3D_ATTRIBUTES attributes = To3DAttributes(pos, forward, up);
+
+		FMOD_3D_ATTRIBUTES attributes; To3DAttributes(pos, forward, up, attributes);
 
 		eventInstance->set3DAttributes(&attributes);
 		eventInstance->start();
 		eventInstance->release();
 
-		return 1;
+		return true;
 	}
 	else
-		return 0;
+		return false;
 }
 
-bool SetInstanceVolume(int index, float volume)
+bool SetInstanceVolume(const int& index, const float& volume)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return 0;
+	if (instanceList.count(i) == 0) 
+	{
+		return false;
 	}
 
 	auto result = instanceList[i]->setVolume(volume);
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
-bool IsPlaying(int index)
+bool IsPlaying(const int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return 0;
+	if (instanceList.count(i) == 0) 
+	{
+		return false;
 	}
 
-	FMOD_STUDIO_PLAYBACK_STATE pS = FMOD_STUDIO_PLAYBACK_STOPPED;
+	FMOD_STUDIO_PLAYBACK_STATE pS = FMOD_STUDIO_PLAYBACK_STATE::FMOD_STUDIO_PLAYBACK_STOPPED;
 
 	auto result = instanceList[i]->getPlaybackState(&pS);
 
-	if (result != FMOD_OK) {
-		return 0;
+	if (result != FMOD_OK) 
+	{
+		return false;
 	}
 
-	if (pS == FMOD_STUDIO_PLAYBACK_PLAYING) {
-		return 1;
+	if (pS == FMOD_STUDIO_PLAYBACK_PLAYING) 
+	{
+		return true;
 	}
 	else
-		return 0;
+	{
+		return false;
+	}	
 }
 
-bool SetInstancePaused(int index, bool pause)
+bool SetInstancePaused(const int& index, bool pause)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return 0;
+	if (instanceList.count(i) == 0) 
+	{
+		return false;
 	}
 
 	auto result = instanceList[i]->setPaused(pause);
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
-bool SetInstancePitch(int index, float pitch)
+bool SetInstancePitch(const int& index, const float& pitch)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return 0;
+	if (instanceList.count(i) == 0)
+	{
+		return false;
 	}
 
 	auto result = instanceList[i]->setPitch(pitch);
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
-float GetInstancePitch(int index)
+float GetInstancePitch(const int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return -1;
+	if (instanceList.count(i) == 0) 
+	{
+		return -1.f;
 	}
 
 	float pitch = 0;
@@ -422,18 +403,20 @@ float GetInstancePitch(int index)
 
 	auto result = instanceList[i]->getPitch(&pitch, &finalPitch);
 
-	if (result != FMOD_OK) {
-		return -1;
+	if (result != FMOD_OK) 
+	{
+		return -1.f;
 	}
 
 	return finalPitch;
 }
 
-int GetTimelinePosition(int index)
+int GetTimelinePosition(const int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
+	if (instanceList.count(i) == 0) 
+	{
 		return -1;
 	}
 
@@ -441,51 +424,53 @@ int GetTimelinePosition(int index)
 
 	auto result = instanceList[i]->getTimelinePosition(&position);
 
-	if (result != FMOD_OK) {
+	if (result != FMOD_OK) 
+	{
 		return -1;
 	}
 
 	return position;
 }
 
-bool SetTimelinePosition(int index, int position)
+bool SetTimelinePosition(const int& index, const unsigned int& position)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return 0;
+	if (instanceList.count(i) == 0) 
+	{
+		return false;
 	}
 
 	auto result = instanceList[i]->setTimelinePosition(position);
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
-float GetInstanceRMS(int index)
+float GetInstanceRMS(const int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
+	if (instanceList.count(i) == 0) 
+	{
 		return -1;
 	}
 
 	FMOD::ChannelGroup* ChanGroup = nullptr;
 	instanceList[i]->getChannelGroup(&ChanGroup);
-	if (ChanGroup) {
+	if (ChanGroup) 
+	{
 		FMOD::DSP* ChanDSP = nullptr;
 		ChanGroup->getDSP(0, &ChanDSP);
-		if (ChanDSP) {
+		if (ChanDSP) 
+		{
 			ChanDSP->setMeteringEnabled(false, true);
 			FMOD_DSP_METERING_INFO Info = {};
 			ChanDSP->getMeteringInfo(nullptr, &Info);
 
 			float rms = 0.f;
 
-			for (int i = 0; i < Info.numchannels; i++) {
+			for (int i = 0; i < Info.numchannels; i++) 
+			{
 				rms += Info.rmslevel[i] * Info.rmslevel[i];
 			}
 
@@ -497,10 +482,10 @@ float GetInstanceRMS(int index)
 			return dB;
 		}
 		else
-			return -1;
+			return -1.f;
 	}
 	else
-		return -1;
+		return -1.f;
 }
 
 float GetGlobalParameterByName(const char* parameterName)
@@ -508,92 +493,95 @@ float GetGlobalParameterByName(const char* parameterName)
 	float value, finalValue;
 	auto result = studioSystem->getParameterByName(parameterName, &value, &finalValue);
 
-	if (result != FMOD_OK) {
-		return -1;
+	if (result != FMOD_OK) 
+	{
+		return -1.f;
 	}
 
 	return finalValue;
 }
 
-bool SetGlobalParameterByName(const char* parameterName, float value,
+bool SetGlobalParameterByName(const char* parameterName, const float& value,
 	bool ignoreSeekSpeed)
 {
 	auto result = studioSystem->setParameterByName(parameterName, value, ignoreSeekSpeed);
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
-float GetParameterByName(int index, const char* parameterName)
+float GetParameterByName(const int& index, const char* parameterName)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return -1;
+	if (instanceList.count(i) == 0) 
+	{
+		return -1.f;
 	}
 
 	float value, finalValue;
 
 	auto result = instanceList[i]->getParameterByName(parameterName, &value, &finalValue);
 
-	if (result != FMOD_OK) {
-		return -1;
+	if (result != FMOD_OK) 
+	{
+		return -1.f;
 	}
 
 	return finalValue;
 }
 
-bool SetParameterByName(int index, const char* parameterName, float value,
+bool SetParameterByName(const int& index, const char* parameterName, const float& value,
 	bool ignoreSeekSpeed)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 0) {
-		return 0;
+	if (instanceList.count(i) == 0) 
+	{
+		return false;
 	}
 
 	auto result = instanceList[i]->setParameterByName(parameterName, value,
 		ignoreSeekSpeed);
 
-	if (result != FMOD_OK) {
-		return 0;
-	}
-
-	return 1;
+	return ERROR_CHECK(result);
 }
 
 int GetBus(const char* busPath)
 {
 	FMOD::Studio::Bus* bus = nullptr;
 	auto result = studioSystem->getBus(busPath, &bus);
-	if (result == FMOD_OK) {
+	if (result == FMOD_OK) 
+	{
 		busList.emplace(nBusses++, bus);
 		return static_cast<int>(nBusses - 1);
 	}
-	else
+	else 
+	{
 		return -1;
+	}
 }
 
-float GetBusVolume(int index)
+float GetBusVolume(const int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (busList.count(i) == 0) {
-		return -1;
+	if (busList.count(i) == 0) 
+	{
+		return -1.f;
 	}
 
 	float volume, finalVolume;
 
 	auto result = busList[i]->getVolume(&volume, &finalVolume);
 
-	if (result != FMOD_OK) {
-		return -1;
+	if (result != FMOD_OK) 
+	{
+		return -1.f;
 	}
-	else
+	else 
+	{
 		return finalVolume;
+	}
 }
 
 bool SetBusVolume(int index, float volume)
@@ -601,13 +589,13 @@ bool SetBusVolume(int index, float volume)
 	std::size_t i = (std::size_t)round(index);
 
 	if (busList.count(i) == 0) {
-		return 0;
+		return false;
 	}
 
 	auto result = busList[i]->setVolume(volume);
 
 	if (result != FMOD_OK) {
-		return 0;
+		return false;
 	}
 	else
 		return 1;
@@ -649,13 +637,13 @@ bool SetVCAVolume(int index, float volume)
 	std::size_t i = (std::size_t)round(index);
 
 	if (vcaList.count(i) == 0) {
-		return 0;
+		return false;
 	}
 
 	auto result = vcaList[i]->setVolume(volume);
 
 	if (result != FMOD_OK) {
-		return 0;
+		return false;
 	}
 	else
 		return 1;
@@ -664,8 +652,9 @@ bool SetVCAVolume(int index, float volume)
 static int love_fmod_init(lua_State* L)
 {
 	lua_pushboolean(L,
-		FMODInit(LuaIntDefault(L, 1, 0), LuaIntDefault(L, 2, 32),
+		Init(LuaIntDefault(L, 1, 0), LuaIntDefault(L, 2, 32),
 			LuaIntDefault(L, 3, 128), LuaIntDefault(L, 4, 1)));
+	printf_s("Test");
 	return 1;
 }
 
@@ -1001,4 +990,5 @@ extern "C" {
 		luaL_openlib(L, "fmod_love", love_fmod_methods, 0);
 		return 1;
 	}
+
 }
