@@ -15,21 +15,21 @@ This module adds support for the FMOD Studio API 2.01.00 (x64) in LÖVE (x64). W
 
 ## Installation
 
-Download the <b>fmod_love.dll</b> file and add it to the directory containing the main.lua file. Download the FMOD Studio API (2.01.00 / x64) and also add <b>fmodstudio.dll</b> and <b>fmod.dll</b> to your game folder.
+Download the <b>fmodlove.dll/libfmodlove.dylib</b> file and add it to the directory containing the main.lua file. Download the FMOD Studio API (2.01.01 / x64) and also add <b>fmodstudio.dll/libfmodstudio.dylib </b>/and <b>fmod.dll/libfmod.dll</b> to your game folder. 
 
 ## Building
-Add 
-- fmod.dll
-- fmod_vc.lib
-- fmodstudio.dll
-- fmodstudio_vc.lib 
-from the API installation to the fmod lib folder and it should build.
+This project uses SCons. Navigate to the folder containing the SConstruct file and run:
+```
+scons platform=windows target=release fmod_api="C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows" 
+Replace platform (windows, osx) and the fmod_api path with the path of your FMOD API installation.
+```
+Replace platform (windows, osx) and the fmod_api path with the path of your FMOD API installation.
 
 ## Usage
 
 ### System functions
 ```
-fmod = require("fmod_love")
+fmod = require("fmodlove") // "libfmodlove" for OSX
 ```
 to load the .dll file.
 
