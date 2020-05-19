@@ -1,7 +1,9 @@
 # fmod-love
 FMOD Studio API module for LÖVE
 
-This module adds support for the FMOD Studio API 2.01.01 (x64) in LÖVE (x64). Works with Windows for now. Pull requests are welcome.
+This module adds support for the FMOD Studio API 2.01.01 (x64) in LÖVE (x64). Works with Windows and macOS for now. Pull requests are welcome.
+
+Note: FMOD is not free, visit https://www.fmod.com/licensing for more info.
 
 ## Contents 
 
