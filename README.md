@@ -21,7 +21,6 @@ Download the <b>fmodlove.dll/libfmodlove.dylib</b> file and add it to the direct
 This project uses SCons. Navigate to the folder containing the SConstruct file and run:
 ```
 scons platform=windows target=release fmod_api="C:\Program Files (x86)\FMOD SoundSystem\FMOD Studio API Windows" 
-Replace platform (windows, osx) and the fmod_api path with the path of your FMOD API installation.
 ```
 Replace platform (windows, osx) and the fmod_api path with the path of your FMOD API installation.
 
