@@ -654,7 +654,6 @@ static int love_fmod_init(lua_State* L)
 	lua_pushboolean(L,
 		Init(LuaIntDefault(L, 1, 0), LuaIntDefault(L, 2, 32),
 			LuaIntDefault(L, 3, 128), LuaIntDefault(L, 4, 1)));
-	printf_s("Test");
 	return 1;
 }
 
@@ -985,10 +984,18 @@ static const struct luaL_reg love_fmod_methods[] = {
 };
 
 extern "C" {
-	__declspec(dllexport) int luaopen_fmod_love(lua_State* L)
+
+	#if !defined( _MSC_VER)
+		__declspec(dllexport) int luaopen_libfmodlove(lua_State* L)
 	{
-		luaL_openlib(L, "fmod_love", love_fmod_methods, 0);
+		luaL_openlib(L, "libfmodlove", love_fmod_methods, 0);
 		return 1;
 	}
-
+	#else
+		__declspec(dllexport) int luaopen_fmodlove(lua_State* L)
+	{
+		luaL_openlib(L, "fmodlove", love_fmod_methods, 0);
+		return 1;
+	}
+	#endif
 }

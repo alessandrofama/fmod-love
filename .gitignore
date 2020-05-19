@@ -361,3 +361,7 @@ lib/
 *.idb
 
 *.dblite
+
+.DS_Store
+
+*.os

@@ -16,7 +16,7 @@ opts.Add(EnumVariable('p', "Compilation target, alias for 'platform'",
 opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", 'no'))
 opts.Add(PathVariable('fmod_api', 'The FMOD API path', '', PathVariable.PathAccept))
 opts.Add(PathVariable('target_path', 'The path where the lib is installed.', 'bin/'))
-opts.Add(PathVariable('target_name', 'The library name.', 'fmod_love', PathVariable.PathAccept))
+opts.Add(PathVariable('target_name', 'The library name.', 'fmodlove', PathVariable.PathAccept))
 
 opts.Update(env)
 
@@ -33,12 +33,14 @@ if env['platform'] == '':
 
 fmod_api_core_headers_path = env['fmod_api'] + "/api/core/inc/"
 fmod_api_studio_headers_path = env['fmod_api'] + "/api/studio/inc/"
-lua_headers_path = "lua/inc/"
-lua_library_path = "lua/lib/"
-lua_lib = "lua51"
+
+
+
 
 if env['platform'] == "osx":
 
+    lua_headers_path = "lua/Lua.framework/Headers/"
+    
     fmod_api_core_libs_path = env['fmod_api'] + "/api/core/lib/"
     fmod_api_studio_libs_path = env['fmod_api'] + "/api/studio/lib/"
 
@@ -55,14 +57,18 @@ if env['platform'] == "osx":
 
     if env['target'] in ('debug', 'd'):
         env.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
-        env.Append(CXXFLAGS=['-std=c++17'])
-        env.Append(LINKFLAGS=['-Wl,-undefined,dynamic_lookup', '-Wignored-attributes'])
+        env.Append(CXXFLAGS=['-std=c++17', '-Wno-unused-value', '-Wno-ignored-attributes', '-fdeclspec'])
+        env.Append(LINKFLAGS=['-Wl,-undefined,dynamic_lookup', '-Wl,-rpath,@loader_path'])
     else:
         env.Append(CCFLAGS=['-g', '-O3', '-arch', 'x86_64'])
-        env.Append(CXXFLAGS=['-std=c++17'])
-        env.Append(LINKFLAGS=['-Wl,-undefined,dynamic_lookup', '-Wignored-attributes'])
+        env.Append(CXXFLAGS=['-std=c++17', '-Wno-unused-value', '-Wno-ignored-attributes', '-fdeclspec'])
+        env.Append(LINKFLAGS=['-Wl,-undefined,dynamic_lookup', '-Wl,-rpath,@loader_path'])
 
 elif env['platform'] == "windows":
+
+    lua_headers_path = "lua/inc/"
+    lua_library_path = "lua/lib/"
+    lua_lib = "lua51"
 
     fmod_api_core_libs_path = env['fmod_api'] + "/api/core/lib/x64/"
     fmod_api_studio_libs_path = env['fmod_api'] + "/api/studio/lib/x64/"
@@ -89,13 +95,23 @@ elif env['platform'] == "windows":
 sources = []
 sources.append(Glob('src/*.cpp')) 
 
-env.Append(CPPPATH=[fmod_api_core_headers_path, fmod_api_studio_headers_path, lua_headers_path])
-env.Append(LIBPATH=[fmod_api_studio_libs_path, fmod_api_core_libs_path, lua_library_path])
+if env['platform'] == "windows":
+    env.Append(CPPPATH=[fmod_api_core_headers_path, fmod_api_studio_headers_path, lua_headers_path])
+    env.Append(LIBPATH=[fmod_api_studio_libs_path, fmod_api_core_libs_path, lua_library_path])
 
-if env['target'] in ('debug', 'd'):
-    env.Append(LIBS=[fmodL_library, fmodstudioL_library, lua_lib])
-else:
-    env.Append(LIBS=[fmod_library, fmodstudio_library, lua_lib])
+    if env['target'] in ('debug', 'd'):
+        env.Append(LIBS=[fmodL_library, fmodstudioL_library, lua_lib])
+    else:
+        env.Append(LIBS=[fmod_library, fmodstudio_library, lua_lib])
+
+elif env['platform'] == "osx":
+    env.Append(CPPPATH=[fmod_api_core_headers_path, fmod_api_studio_headers_path, lua_headers_path])
+    env.Append(LIBPATH=[fmod_api_studio_libs_path, fmod_api_core_libs_path])
+
+    if env['target'] in ('debug', 'd'):
+        env.Append(LIBS=[fmodL_library, fmodstudioL_library])
+    else:
+        env.Append(LIBS=[fmod_library, fmodstudio_library])        
 
 library = env.SharedLibrary(target=env['target_path'] + env['target_name'] , source=sources)
 
