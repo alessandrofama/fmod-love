@@ -30,9 +30,13 @@ Replace platform (windows, osx) and the fmod_api path with the path of your FMOD
 
 ### System functions
 ```
-fmod = require("fmodlove") // "libfmodlove" for OSX
+fmod = require("fmodlove") // "libfmodlove" for macOS
 ```
-to load the .dll file.
+to load the library. Make sure to add:
+```
+package.cpath = package.cpath .. ";?.dylib"
+```
+for macOS.
 
 ```
 fmod.init(outputType, realChannels, virtualChannels,
