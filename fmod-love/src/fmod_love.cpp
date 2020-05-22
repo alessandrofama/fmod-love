@@ -53,7 +53,7 @@ static bool CheckError(const FMOD_RESULT result)
 #define ERROR_CHECK(result) CheckError(result)
 
 bool Init(const unsigned int& outputType, const unsigned int& realChannels, const unsigned int& virtualChannels,
-	const unsigned int studioInitFlags)
+	const unsigned int& studioInitFlags)
 {
 	auto result = FMOD::Studio::System::create(&studioSystem);
 
@@ -117,7 +117,7 @@ int LoadBank(const char* bankPath, int flags)
 		return -1;
 }
 
-bool UnloadBank(int index)
+bool UnloadBank(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -131,14 +131,14 @@ bool UnloadBank(int index)
 	return ERROR_CHECK(result);
 }
 
-bool SetNumListeners(int listeners)
+bool SetNumListeners(const unsigned int& listeners)
 {
 	auto result = studioSystem->setNumListeners(listeners);
 
 	return ERROR_CHECK(result);
 }
 
-bool SetListener3DPosition(int listener, float posX, float posY, float posZ,
+bool SetListener3DPosition(const unsigned int& listener, float posX, float posY, float posZ,
 	float dirX, float dirY, float dirZ, float oX,
 	float oY, float oZ)
 {
@@ -182,7 +182,7 @@ int CreateInstance(const char* eventPath)
 	}		
 }
 
-bool StartInstance(int index)
+bool StartInstance(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -194,7 +194,7 @@ bool StartInstance(int index)
 	return ERROR_CHECK(result);
 }
 
-bool StopInstance(int index, int stopMode)
+bool StopInstance(const unsigned int& index, int stopMode)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -208,11 +208,12 @@ bool StopInstance(int index, int stopMode)
 	return false;
 }
 
-bool ReleaseInstance(int index)
+bool ReleaseInstance(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
-	if (instanceList.count(i) == 1) {
+	if (instanceList.count(i) == 1) 
+	{
 		auto result = instanceList[i]->release();
 
 		if (result != FMOD_OK) 
@@ -226,7 +227,7 @@ bool ReleaseInstance(int index)
 	return true;
 }
 
-bool Set3DAttributes(int index, float posX, float posY, float posZ, float dirX,
+bool Set3DAttributes(const unsigned int& index, float posX, float posY, float posZ, float dirX,
 	float dirY, float dirZ, float oX, float oY, float oZ)
 {
 	std::size_t i = (std::size_t)round(index);
@@ -319,7 +320,7 @@ bool PlayOneShot3D(const char* eventPath, float posX, float posY, float posZ,
 		return false;
 }
 
-bool SetInstanceVolume(const int& index, const float& volume)
+bool SetInstanceVolume(const unsigned int& index, float volume)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -333,7 +334,7 @@ bool SetInstanceVolume(const int& index, const float& volume)
 	return ERROR_CHECK(result);
 }
 
-bool IsPlaying(const int& index)
+bool IsPlaying(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -361,7 +362,7 @@ bool IsPlaying(const int& index)
 	}	
 }
 
-bool SetInstancePaused(const int& index, bool pause)
+bool SetInstancePaused(const unsigned int& index, bool pause)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -375,7 +376,7 @@ bool SetInstancePaused(const int& index, bool pause)
 	return ERROR_CHECK(result);
 }
 
-bool SetInstancePitch(const int& index, const float& pitch)
+bool SetInstancePitch(const unsigned int& index, float pitch)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -389,7 +390,7 @@ bool SetInstancePitch(const int& index, const float& pitch)
 	return ERROR_CHECK(result);
 }
 
-float GetInstancePitch(const int& index)
+float GetInstancePitch(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -411,7 +412,7 @@ float GetInstancePitch(const int& index)
 	return finalPitch;
 }
 
-int GetTimelinePosition(const int& index)
+int GetTimelinePosition(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -432,7 +433,7 @@ int GetTimelinePosition(const int& index)
 	return position;
 }
 
-bool SetTimelinePosition(const int& index, const unsigned int& position)
+bool SetTimelinePosition(const unsigned int& index, const unsigned int& position)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -446,7 +447,7 @@ bool SetTimelinePosition(const int& index, const unsigned int& position)
 	return ERROR_CHECK(result);
 }
 
-float GetInstanceRMS(const int& index)
+float GetInstanceRMS(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -501,7 +502,7 @@ float GetGlobalParameterByName(const char* parameterName)
 	return finalValue;
 }
 
-bool SetGlobalParameterByName(const char* parameterName, const float& value,
+bool SetGlobalParameterByName(const char* parameterName, float value,
 	bool ignoreSeekSpeed)
 {
 	auto result = studioSystem->setParameterByName(parameterName, value, ignoreSeekSpeed);
@@ -509,7 +510,7 @@ bool SetGlobalParameterByName(const char* parameterName, const float& value,
 	return ERROR_CHECK(result);
 }
 
-float GetParameterByName(const int& index, const char* parameterName)
+float GetParameterByName(const unsigned int& index, const char* parameterName)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -530,7 +531,7 @@ float GetParameterByName(const int& index, const char* parameterName)
 	return finalValue;
 }
 
-bool SetParameterByName(const int& index, const char* parameterName, const float& value,
+bool SetParameterByName(const unsigned int& index, const char* parameterName, float value,
 	bool ignoreSeekSpeed)
 {
 	std::size_t i = (std::size_t)round(index);
@@ -561,7 +562,7 @@ int GetBus(const char* busPath)
 	}
 }
 
-float GetBusVolume(const int& index)
+float GetBusVolume(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -584,7 +585,7 @@ float GetBusVolume(const int& index)
 	}
 }
 
-bool SetBusVolume(int index, float volume)
+bool SetBusVolume(const unsigned int& index, float volume)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -613,7 +614,7 @@ int GetVCA(const char* vcaPath)
 		return -1;
 }
 
-float GetVCAVolume(int index)
+float GetVCAVolume(const unsigned int& index)
 {
 	std::size_t i = (std::size_t)round(index);
 
@@ -632,7 +633,7 @@ float GetVCAVolume(int index)
 		return finalVolume;
 }
 
-bool SetVCAVolume(int index, float volume)
+bool SetVCAVolume(const unsigned int& index, float volume)
 {
 	std::size_t i = (std::size_t)round(index);
 
